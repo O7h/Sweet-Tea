@@ -1,0 +1,11 @@
+
+# Qt Creator
+*.pro.user
+
+# Vim
+*.swp
+
+# Binary Formats
+*.jpg
+*.png
+

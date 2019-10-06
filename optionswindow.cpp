@@ -1,0 +1,83 @@
+#include "optionswindow.h"
+#include "ui_optionswindow.h"
+
+#include <QSettings>
+#include <QDir>
+#include <QStandardPaths>
+#include <QDebug>
+
+OptionsWindow::OptionsWindow(QWidget *parent) :
+    QDialog(parent),
+    ui(new Ui::OptionsWindow)
+{
+
+    ui->setupUi(this);
+
+    QSettings *settings = new QSettings(QDir(QCoreApplication::applicationDirPath())
+                       .filePath("sweet-tea.ini"),
+                       QSettings::IniFormat);
+    ui->ManifestList->addItems(settings->value("manifests").toStringList());
+    ui->DownloadPathLine->setText(
+                settings->value("datadir",
+                               QStandardPaths::writableLocation(
+                                   QStandardPaths::DataLocation))
+                .toString());
+
+    connect (
+        ui->NewManifestLine,
+        &QLineEdit::returnPressed,
+        [this] {
+            ui->ManifestList->addItem(ui->NewManifestLine->text());
+            ui->NewManifestLine->clear();
+        });
+
+    connect (
+        ui->AddManifestButton,
+        &QPushButton::pressed,
+        [this] {
+            ui->ManifestList->addItem(ui->NewManifestLine->text());
+            ui->NewManifestLine->clear();
+        });
+
+    connect (
+        ui->RemoveManifestButton,
+        &QPushButton::pressed,
+        [this] {
+            qDeleteAll(ui->ManifestList->selectedItems());
+        });
+
+    connect (
+        ui->ApplyButton,
+        &QPushButton::pressed,
+        [this] {
+            accept();
+        });
+
+    connect (
+        ui->CancelButon,
+        &QPushButton::pressed,
+        [this] {
+            reject();
+        });
+
+    connect (
+        this,
+        &QDialog::accepted,
+        [this, settings] {
+            QStringList manifests;
+            for(int i = 0; i < ui->ManifestList->count(); i++)
+                manifests.append(ui->ManifestList->item(i)->text());
+            settings->setValue("manifests", manifests);
+            QString datadir = ui->DownloadPathLine->text().isEmpty()
+                    ? QDir::currentPath()
+                    : ui->DownloadPathLine->text();
+            settings->setValue("datadir", datadir);
+            QDir::setCurrent(ui->DownloadPathLine->text());
+        });
+
+}
+
+OptionsWindow::~OptionsWindow()
+{
+    delete ui;
+}

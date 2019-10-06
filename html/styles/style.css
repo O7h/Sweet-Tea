@@ -1,0 +1,27 @@
+
+.banner {
+	margin: auto;
+	width: 400px;
+}
+
+.caption {
+	margin: auto;
+	width: 300px;
+}
+
+.header {
+	margin: auto;
+}
+
+.header.center {
+	text-align: center;
+}
+
+.header.left {
+	text-align: left;
+}
+
+.header.right {
+	text-align: right;
+}
+
