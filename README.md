@@ -9,6 +9,8 @@
 
 * fix bugs
 * redesign / refactor
-* write logs to files
-* display all servers from all manifests in one list (most requested feature)
+* self-patching
+* don't allow absolute paths or paths with ".." in manifests
+* write to logs to files
+* use desktop icon
 
