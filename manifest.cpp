@@ -13,22 +13,25 @@ Manifest::Manifest(QDomDocument &doc, QObject *parent)
         QString name = node
                 .attributes()
                 .namedItem("name")
-                .nodeValue();
+                .nodeValue()
+                .trimmed();
         long size = node
                 .attributes()
                 .namedItem("size")
                 .nodeValue()
+                .trimmed()
                 .toLong();
         QByteArray md5 = QByteArray::fromHex(node
                                              .attributes()
                                              .namedItem("md5")
                                              .nodeValue()
+                                             .trimmed()
                                              .toLatin1());
         QList<QUrl*> urls;
         QDomNodeList children = node.childNodes();
         for(int j = 0; j < children.size(); j++) {
             QDomNode child = children.item(j);
-            urls.append(new QUrl(child.toElement().text()));
+            urls.append(new QUrl(child.toElement().text().trimmed()));
         }
         if(!QDir(name).isAbsolute() && !name.contains(".."))
             items.append(new ManifestItem(name, md5, size, urls, this));
