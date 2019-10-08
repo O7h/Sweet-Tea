@@ -15,6 +15,7 @@ public:
     bool validate();
 
     QList<ManifestItem*> items;
+    QList<QString*> deletions;
     QList<ServerEntry*> servers;
 
 };

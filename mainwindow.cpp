@@ -99,6 +99,21 @@ void MainWindow::setup() {
 
 }
 
+void MainWindow::deleteItem(QString *item) {
+
+    QFile file(*item);
+    if(!file.exists()) {
+        qInfo() << *item << " does not exist, so not deleting";
+        return;
+    }
+
+    QMessageBox::StandardButton choice = QMessageBox::question(this, "Delete File", "Delete " + *item);
+    if(choice == QMessageBox::Yes)
+        if(!file.remove())
+            QMessageBox::warning(this, "File Delete Error", "Unable to delete " + *item);
+
+}
+
 void MainWindow::downloadItem(ManifestItem *item) {
 
     QFutureWatcher<bool> *watcher = new QFutureWatcher<bool>(this);
@@ -245,6 +260,8 @@ void MainWindow::validateManifest(Manifest *manifest) {
     QSettings settings(QSettings::UserScope);
     settings.remove("manifestChecksum");
     settings.remove("oldDir");
+    for(QString *item : manifest->deletions)
+        deleteItem(item);
     ui->ValidateButton->setEnabled(false);
     currentFiles = 0;
     for(ManifestItem *item : manifest->items)

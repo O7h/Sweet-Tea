@@ -39,6 +39,16 @@ Manifest::Manifest(QDomDocument &doc, QObject *parent)
             qWarning() << "insecure path not allowed for file: " << name;
     }
 
+    QDomNodeList deleteList = doc.elementsByTagName("deletefile");
+    for(int i = 0; i < deleteList.size(); i++) {
+        QDomNode node = deleteList.item(i);
+        QString name = node.toElement().text().trimmed();
+        if(!QDir(name).isAbsolute() && !name.contains(".."))
+            deletions.append(new QString(name));
+        else
+            qWarning() << "insecure path not allowed for file: " << name;
+    }
+
     QDomNodeList profiles = doc.elementsByTagName("launch");
     for(int i = 0; i < profiles.size(); i++) {
         QDomNode node = profiles.item(i);

@@ -38,6 +38,7 @@ private:
     void downloadManifest(QUrl url);
     void openManifest(QString fname);
     void downloadItem(ManifestItem* item);
+    void deleteItem(QString *item);
     void loadManifests();
 
 };
