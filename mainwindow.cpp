@@ -78,7 +78,6 @@ void MainWindow::setup() {
             QProcess *proc = new QProcess(this);
             ServerEntry *server = manifest->servers.at(ui->listWidget->currentRow());
             proc->startDetached(server->client, server->args.split(" "));
-            QApplication::quit();
         });
 
     connect (
