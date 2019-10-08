@@ -73,17 +73,16 @@ void MainWindow::setup() {
 
     connect (
         ui->LaunchButton,
-        &QPushButton::pressed,
+        &QPushButton::released,
         [this] {
             QProcess *proc = new QProcess(this);
             ServerEntry *server = manifest->servers.at(ui->listWidget->currentRow());
             proc->startDetached(server->client, server->args.split(" "));
-            QApplication::quit();
         });
 
     connect (
         ui->ValidateButton,
-        &QPushButton::pressed,
+        &QPushButton::released,
         [this] {
             validateManifest(manifest);
         });
