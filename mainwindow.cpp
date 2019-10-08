@@ -264,8 +264,11 @@ void MainWindow::checkUpdate(QString *switchProcess) {
         &QNetworkReply::finished,
         [=] {
 
-           if(res->error() != QNetworkReply::NoError)
+           if(res->error() != QNetworkReply::NoError) {
                qWarning() << res->request().url() << res->errorString();
+               setup();
+               return;
+           }
 
            QString lastUpdate = QSettings(QDir(QCoreApplication::applicationDirPath())
                                  .filePath("sweet-tea.ini"),
@@ -302,7 +305,7 @@ void MainWindow::checkUpdate(QString *switchProcess) {
           QUrl baseUrl(res->readLine().trimmed());
           QList<QByteArray> lines = res->readAll().trimmed().split('\n');
           currentFiles = 0;
-          maxFiles = lines.size() - 1;
+          maxFiles = lines.size();
           progress->setMaximum(maxFiles);
           for(QString line : lines) {
               QStringList entry = line.split(' ');
