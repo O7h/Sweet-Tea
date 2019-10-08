@@ -47,6 +47,13 @@
          </widget>
         </item>
         <item>
+         <widget class="QPushButton" name="ScreenshotButton">
+          <property name="text">
+           <string>Screenshots</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QComboBox" name="ManifestSelect">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">

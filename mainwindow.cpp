@@ -6,6 +6,7 @@
 #include <QtConcurrent>
 #include <QMessageBox>
 #include <QProgressDialog>
+#include <QDesktopServices>
 
 MainWindow::MainWindow (
         QString *switchProcess,
@@ -25,6 +26,15 @@ void MainWindow::setup() {
     ui->listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
 
     loadManifests();
+
+    connect (
+        ui->ScreenshotButton,
+        &QPushButton::released,
+        [] {
+            QString path = QDir::cleanPath(QDir::currentPath() + QDir::separator() + "screenshots");
+            QDir(path).mkpath(".");
+            QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+        });
 
     connect (
         ui->OptionsButton,
