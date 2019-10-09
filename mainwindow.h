@@ -24,12 +24,13 @@ private:
     QNetworkAccessManager netMan;
     Ui::MainWindow *ui;
     Manifest* manifest;
-    QByteArray manifestChecksum;
     long currentFiles;
+    long errorFiles;
     long maxFiles;
 
     bool validate(QString fname, QString checksum);
     void setup();
+    void addServerEntry(ServerEntry* server);
     void download(QUrl baseUrl, QString fname, QString checksum, QString version, QString *switchProcess, QProgressDialog *progress);
     void checkUpdate(QString *switchProcess);
     void selfUpdate();

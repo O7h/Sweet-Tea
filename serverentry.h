@@ -5,6 +5,8 @@
 #include <QUrl>
 #include <QFile>
 
+class Manifest;
+
 class ServerEntry : public QObject
 {
     Q_OBJECT
@@ -14,12 +16,14 @@ public:
             QUrl site,
             QString client,
             QString args,
+            Manifest *manifest,
             QObject *parent = nullptr );
 
     QString name;
     QUrl site;
     QString client;
     QString args;
+    Manifest *manifest;
 
 };
 

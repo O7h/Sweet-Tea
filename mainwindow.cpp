@@ -50,35 +50,13 @@ void MainWindow::setup() {
         });
 
     connect (
-        ui->ManifestSelect,
-        QOverload<int>::of(&QComboBox::currentIndexChanged),
-        [this] {
-            QUrl url = QUrl::fromUserInput(ui->ManifestSelect->currentText());
-            if(!url.isLocalFile())
-                downloadManifest(url);
-            else
-                openManifest(ui->ManifestSelect->currentText());
-        });
-    ui->ManifestSelect->currentIndexChanged(0);
-
-    connect (
         ui->listWidget,
         &QListWidget::itemClicked,
         [this] {
-            ServerEntry *entry = manifest->servers.at(ui->listWidget->currentRow());
+            QListWidgetItem *item = ui->listWidget->currentItem();
+            ServerEntry *entry = item->data(Qt::UserRole).value<ServerEntry*>();
             ui->WebView->setUrl(entry->site);
-            ui->LaunchButton->setEnabled (
-                        ui->listWidget->currentItem() != nullptr
-                        && currentFiles == manifest->items.size() );
-        });
-
-    connect (
-        ui->UpdateProgress,
-        &QProgressBar::valueChanged,
-        [this] {
-            ui->LaunchButton->setEnabled (
-                        ui->listWidget->currentItem() != nullptr
-                        && currentFiles == manifest->items.size() );
+            setManifest(entry->manifest);
         });
 
     connect (
@@ -126,18 +104,27 @@ void MainWindow::downloadItem(ManifestItem *item) {
         if(future.result()) {
             qInfo() << item->fname + " validated";
             currentFiles++;
-            ui->UpdateProgress->setValue(currentFiles * 100.0 / manifest->items.size());
-            if(currentFiles == manifest->items.size()) {
-                QSettings settings(QSettings::UserScope);
-                settings.setValue("manifestChecksum", manifestChecksum);
-                settings.setValue("oldDir", QDir::currentPath());
+            ui->UpdateProgress->setValue(currentFiles);
+            if(currentFiles + errorFiles == maxFiles) {
+                if(errorFiles <= 0) {
+                    QSettings settings(QSettings::UserScope);
+                    settings.setValue("manifestChecksum", manifest->checksum);
+                    settings.setValue("oldDir", QDir::currentPath());
+                    ui->LaunchButton->setEnabled(true);
+                }
                 ui->ValidateButton->setEnabled(true);
+                ui->listWidget->setEnabled(true);
             }
             return;
         }
 
         if(item->urls.isEmpty()) {
             qWarning() << "failed to download " << item->fname;
+            errorFiles++;
+            if(currentFiles + errorFiles == maxFiles) {
+                ui->ValidateButton->setEnabled(true);
+                ui->listWidget->setEnabled(true);
+            }
             return;
         }
 
@@ -145,6 +132,11 @@ void MainWindow::downloadItem(ManifestItem *item) {
         QSaveFile *file = new QSaveFile(item->fname);
         if(!file->open(QIODevice::WriteOnly)) {
             qWarning() << "failed to write to " << item->fname;
+            errorFiles++;
+            if(currentFiles + errorFiles == maxFiles) {
+                ui->ValidateButton->setEnabled(true);
+                ui->listWidget->setEnabled(true);
+            }
             return;
         }
 
@@ -179,6 +171,11 @@ void MainWindow::downloadItem(ManifestItem *item) {
 
 }
 
+void MainWindow::addServerEntry(ServerEntry *server) {
+    QListWidgetItem *item = new QListWidgetItem(server->name, ui->listWidget);
+    item->setData(Qt::UserRole, QVariant::fromValue(server));
+}
+
 void MainWindow::openManifest(QString fname) {
 
     ui->ValidateButton->setEnabled(false);
@@ -189,8 +186,9 @@ void MainWindow::openManifest(QString fname) {
     if(file.open(QIODevice::ReadOnly) && doc.setContent(&file)) {
         QCryptographicHash md5(QCryptographicHash::Md5);
         md5.addData(&file);
-        manifestChecksum = md5.result();
-        setManifest(new Manifest(doc));
+        Manifest *manifest = new Manifest(doc, md5.result());
+        for(ServerEntry *server : manifest->servers)
+            addServerEntry(server);
     }
     else
         qWarning() << "unable to read manifest: " + fname;
@@ -220,9 +218,10 @@ void MainWindow::downloadManifest(QUrl url) {
 
            QCryptographicHash md5(QCryptographicHash::Md5);
            md5.addData(content);
-           manifestChecksum = md5.result();
 
-           setManifest(new Manifest(doc));
+           Manifest *manifest = new Manifest(doc, md5.result());
+           for(ServerEntry *server : manifest->servers)
+               addServerEntry(server);
 
            res->deleteLater();
 
@@ -234,24 +233,23 @@ void MainWindow::setManifest(Manifest *manifest) {
 
     this->manifest = manifest;
 
-    ui->listWidget->clear();
-    if(!manifest->servers.empty())
-        for(ServerEntry *server : manifest->servers)
-            ui->listWidget->addItem(server->name);
-
+    ui->LaunchButton->setEnabled(false);
     ui->ValidateButton->setEnabled(true);
+    ui->UpdateProgress->setValue(0);
 
     QSettings settings(QSettings::UserScope);
     QByteArray oldChecksum = settings.value("manifestChecksum").toByteArray();
     QString oldDir = settings.value("oldDIr").toString();
     qInfo() << "old manifest: " + oldChecksum.toHex();
-    qInfo() << "new manifest: " + manifestChecksum.toHex();
+    qInfo() << "new manifest: " + manifest->checksum.toHex();
     qInfo() << "old dir: " + oldDir;
     qInfo() << "new dir: " + QDir::currentPath();
 
-    if(oldChecksum == manifestChecksum && oldDir == QDir::currentPath()) {
+    if(oldChecksum == manifest->checksum && oldDir == QDir::currentPath()) {
         currentFiles = manifest->items.size();
-        ui->UpdateProgress->setValue(100);
+        ui->UpdateProgress->setValue(currentFiles);
+        ui->UpdateProgress->setMaximum(currentFiles);
+        ui->LaunchButton->setEnabled(true);
     }
 
 }
@@ -262,19 +260,33 @@ void MainWindow::validateManifest(Manifest *manifest) {
     settings.remove("oldDir");
     for(QString *item : manifest->deletions)
         deleteItem(item);
-    ui->ValidateButton->setEnabled(false);
     currentFiles = 0;
+    errorFiles = 0;
+    maxFiles = manifest->items.size();
+    ui->ValidateButton->setEnabled(false);
+    ui->LaunchButton->setEnabled(false);
+    ui->listWidget->setEnabled(false);
+    ui->UpdateProgress->setMaximum(maxFiles);
     for(ManifestItem *item : manifest->items)
         downloadItem(item);
 }
 
 void MainWindow::loadManifests() {
-    ui->ManifestSelect->clear();
+
     ui->listWidget->clear();
     QSettings settings(QDir(QCoreApplication::applicationDirPath())
                        .filePath("sweet-tea.ini"),
                        QSettings::IniFormat);
-    ui->ManifestSelect->addItems(settings.value("manifests").toStringList());
+    QStringList manifests = settings.value("manifests").toStringList();
+
+    for(QString manifest : manifests) {
+        QUrl url = QUrl::fromUserInput(manifest);
+        if(!url.isLocalFile())
+            downloadManifest(url);
+        else
+            openManifest(manifest);
+    }
+
 }
 
 void MainWindow::checkUpdate(QString *switchProcess) {

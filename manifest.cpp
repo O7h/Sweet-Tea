@@ -4,8 +4,9 @@
 #include <QNetworkReply>
 #include <QtDebug>
 
-Manifest::Manifest(QDomDocument &doc, QObject *parent)
-    : QObject(parent) {
+Manifest::Manifest(QDomDocument &doc, QByteArray checksum, QObject *parent)
+    : QObject(parent),
+      checksum(checksum) {
 
     QDomNodeList filelists = doc.elementsByTagName("file");
     for(int i = 0; i < filelists.size(); i++) {
@@ -63,7 +64,7 @@ Manifest::Manifest(QDomDocument &doc, QObject *parent)
                 .namedItem("params")
                 .nodeValue();
         if(!QDir(client).isAbsolute() && !client.contains(".."))
-            servers.append(new ServerEntry(name, site, client, args, this));
+            servers.append(new ServerEntry(name, site, client, args, this, this));
         else
             qWarning() << "insecure path not allowed for client: " << client;
     }

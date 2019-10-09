@@ -5,9 +5,11 @@ ServerEntry::ServerEntry (
         QUrl site,
         QString client,
         QString args,
+        Manifest *manifest,
         QObject *parent )
     : QObject(parent),
       name(name),
       site(site),
       client(client),
-      args(args) {}
+      args(args),
+      manifest(manifest) {}

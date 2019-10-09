@@ -11,9 +11,10 @@ class Manifest : public QObject
 {
     Q_OBJECT
 public:
-    explicit Manifest(QDomDocument &doc, QObject *parent = nullptr);
+    explicit Manifest(QDomDocument &doc, QByteArray checksum, QObject *parent = nullptr);
     bool validate();
 
+    QByteArray checksum;
     QList<ManifestItem*> items;
     QList<QString*> deletions;
     QList<ServerEntry*> servers;

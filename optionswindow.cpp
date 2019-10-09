@@ -33,7 +33,7 @@ OptionsWindow::OptionsWindow(QWidget *parent) :
 
     connect (
         ui->AddManifestButton,
-        &QPushButton::pressed,
+        &QPushButton::released,
         [this] {
             ui->ManifestList->addItem(ui->NewManifestLine->text());
             ui->NewManifestLine->clear();
@@ -41,21 +41,21 @@ OptionsWindow::OptionsWindow(QWidget *parent) :
 
     connect (
         ui->RemoveManifestButton,
-        &QPushButton::pressed,
+        &QPushButton::released,
         [this] {
             qDeleteAll(ui->ManifestList->selectedItems());
         });
 
     connect (
         ui->ApplyButton,
-        &QPushButton::pressed,
+        &QPushButton::released,
         [this] {
             accept();
         });
 
     connect (
         ui->CancelButon,
-        &QPushButton::pressed,
+        &QPushButton::released,
         [this] {
             reject();
         });

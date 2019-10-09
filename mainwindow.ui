@@ -38,34 +38,6 @@
     <item>
      <layout class="QVBoxLayout" name="ControlPanel">
       <item>
-       <layout class="QHBoxLayout" name="ManifestPanel">
-        <item>
-         <widget class="QPushButton" name="OptionsButton">
-          <property name="text">
-           <string>Options</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="ScreenshotButton">
-          <property name="text">
-           <string>Screenshots</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QComboBox" name="ManifestSelect">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item>
        <widget class="QListWidget" name="listWidget"/>
       </item>
       <item>
@@ -91,16 +63,30 @@
          </widget>
         </item>
         <item>
-         <widget class="QProgressBar" name="UpdateProgress">
-          <property name="value">
-           <number>0</number>
+         <widget class="QPushButton" name="OptionsButton">
+          <property name="text">
+           <string>Options</string>
           </property>
-          <property name="invertedAppearance">
-           <bool>false</bool>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="ScreenshotButton">
+          <property name="text">
+           <string>Screenshots</string>
           </property>
          </widget>
         </item>
        </layout>
+      </item>
+      <item>
+       <widget class="QProgressBar" name="UpdateProgress">
+        <property name="value">
+         <number>0</number>
+        </property>
+        <property name="invertedAppearance">
+         <bool>false</bool>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>
