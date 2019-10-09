@@ -212,7 +212,7 @@ void MainWindow::openManifest(QString fname) {
     QFile file(fname);
     if(file.open(QIODevice::ReadOnly) && doc.setContent(&file)) {
         QCryptographicHash md5(QCryptographicHash::Md5);
-        md5.addData(&file);
+        md5.addData(doc.toByteArray());
         Manifest *manifest = new Manifest(doc, md5.result());
         for(ServerEntry *server : manifest->servers)
             addServerEntry(server);
