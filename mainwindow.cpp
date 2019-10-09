@@ -64,7 +64,8 @@ void MainWindow::setup() {
         &QPushButton::released,
         [this] {
             QProcess *proc = new QProcess(this);
-            ServerEntry *server = manifest->servers.at(ui->listWidget->currentRow());
+            QListWidgetItem *item = ui->listWidget->currentItem();
+            ServerEntry *server = item->data(Qt::UserRole).value<ServerEntry*>();
             proc->startDetached(server->client, server->args.split(" "));
         });
 
