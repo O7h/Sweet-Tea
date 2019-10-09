@@ -172,8 +172,35 @@ void MainWindow::downloadItem(ManifestItem *item) {
 }
 
 void MainWindow::addServerEntry(ServerEntry *server) {
+
     QListWidgetItem *item = new QListWidgetItem(server->name, ui->listWidget);
     item->setData(Qt::UserRole, QVariant::fromValue(server));
+
+    if(!server->icon.isEmpty()) {
+        QNetworkRequest req(server->icon);
+        req.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+        QNetworkReply *res = netMan.get(req);
+        connect (
+            res,
+            &QNetworkReply::finished,
+            [=] {
+
+               if(res->error() != QNetworkReply::NoError) {
+                   qWarning() << "icon: " << res->errorString();
+                   return;
+               }
+
+               QPixmap pixels;
+               if(!pixels.loadFromData(res->readAll()))
+                   qWarning() << "unable to read icon: " << server->icon;
+               else
+                   item->setIcon(QIcon(pixels));
+
+               res->deleteLater();
+
+            });
+    }
+
 }
 
 void MainWindow::openManifest(QString fname) {

@@ -53,18 +53,25 @@ Manifest::Manifest(QDomDocument &doc, QByteArray checksum, QObject *parent)
     QDomNodeList profiles = doc.elementsByTagName("launch");
     for(int i = 0; i < profiles.size(); i++) {
         QDomNode node = profiles.item(i);
-        QString name = node.toElement().text();
+        QString name = node.toElement().text().trimmed();
+        QUrl icon(node.attributes()
+                  .namedItem("icon")
+                  .nodeValue()
+                  .trimmed());
         QString client = node.attributes()
                 .namedItem("exec")
-                .nodeValue();
+                .nodeValue()
+                .trimmed();
         QUrl site(node.attributes()
                   .namedItem("website")
-                  .nodeValue());
+                  .nodeValue()
+                  .trimmed());
         QString args = node.attributes()
                 .namedItem("params")
-                .nodeValue();
+                .nodeValue()
+                .trimmed();
         if(!QDir(client).isAbsolute() && !client.contains(".."))
-            servers.append(new ServerEntry(name, site, client, args, this, this));
+            servers.append(new ServerEntry(name, site, icon, client, args, this, this));
         else
             qWarning() << "insecure path not allowed for client: " << client;
     }

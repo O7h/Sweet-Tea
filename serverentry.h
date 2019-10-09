@@ -14,6 +14,7 @@ public:
     explicit ServerEntry (
             QString name,
             QUrl site,
+            QUrl icon,
             QString client,
             QString args,
             Manifest *manifest,
@@ -21,6 +22,7 @@ public:
 
     QString name;
     QUrl site;
+    QUrl icon;
     QString client;
     QString args;
     Manifest *manifest;
