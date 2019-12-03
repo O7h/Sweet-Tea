@@ -7,6 +7,7 @@
 #include <QMessageBox>
 #include <QProgressDialog>
 #include <QDesktopServices>
+#include <QSettings>
 
 MainWindow::MainWindow (
         QString *switchProcess,
@@ -66,7 +67,9 @@ void MainWindow::setup() {
             QProcess *proc = new QProcess(this);
             QListWidgetItem *item = ui->listWidget->currentItem();
             ServerEntry *server = item->data(Qt::UserRole).value<ServerEntry*>();
-            proc->startDetached(server->client, server->args.split(" "));
+			QList<QString> args = server->args.split(" ");
+			args.prepend(server->client);
+            proc->startDetached("wine", args);
         });
 
     connect (
@@ -108,7 +111,7 @@ void MainWindow::downloadItem(ManifestItem *item) {
             ui->UpdateProgress->setValue(currentFiles);
             if(currentFiles + errorFiles == maxFiles) {
                 if(errorFiles <= 0) {
-                    QSettings settings(QSettings::UserScope);
+					QSettings settings(QSettings::UserScope, "ThunderspyGaming");
                     settings.setValue("manifestChecksum", manifest->checksum);
                     settings.setValue("oldDir", QDir::currentPath());
                     ui->LaunchButton->setEnabled(true);
@@ -265,7 +268,7 @@ void MainWindow::setManifest(Manifest *manifest) {
     ui->ValidateButton->setEnabled(true);
     ui->UpdateProgress->setValue(0);
 
-    QSettings settings(QSettings::UserScope);
+    QSettings settings(QSettings::UserScope, "ThunderspyGaming");
     QByteArray oldChecksum = settings.value("manifestChecksum").toByteArray();
     QString oldDir = settings.value("oldDIr").toString();
     qInfo() << "old manifest: " + oldChecksum.toHex();
@@ -283,7 +286,7 @@ void MainWindow::setManifest(Manifest *manifest) {
 }
 
 void MainWindow::validateManifest(Manifest *manifest) {
-    QSettings settings(QSettings::UserScope);
+    QSettings settings(QSettings::UserScope, "ThunderspyGaming");
     settings.remove("manifestChecksum");
     settings.remove("oldDir");
     for(QString *item : manifest->deletions)
