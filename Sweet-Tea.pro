@@ -1,4 +1,4 @@
-QT       += core gui webenginewidgets xml network widgets concurrent
+QT       += core gui xml network widgets concurrent
 
 CONFIG += c++11
 

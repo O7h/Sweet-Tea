@@ -21,8 +21,6 @@ MainWindow::MainWindow (
 void MainWindow::setup() {
 
     ui->setupUi(this);
-    ui->WebView->setUrl(QDir(QCoreApplication::applicationDirPath())
-                         .filePath("html/index.html"));
     ui->listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
 
     loadManifests();
@@ -55,7 +53,6 @@ void MainWindow::setup() {
         [this] {
             QListWidgetItem *item = ui->listWidget->currentItem();
             ServerEntry *entry = item->data(Qt::UserRole).value<ServerEntry*>();
-            ui->WebView->setUrl(entry->site);
             setManifest(entry->manifest);
         });
 

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1098</width>
-    <height>600</height>
+    <width>340</width>
+    <height>400</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -90,27 +90,9 @@
       </item>
      </layout>
     </item>
-    <item>
-     <widget class="QWebEngineView" name="WebView" native="true">
-      <property name="minimumSize">
-       <size>
-        <width>800</width>
-        <height>0</height>
-       </size>
-      </property>
-     </widget>
-    </item>
    </layout>
   </widget>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>QWebEngineView</class>
-   <extends>QWidget</extends>
-   <header>qwebengineview.h</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>
