@@ -105,7 +105,7 @@ void MainWindow::downloadItem(ManifestItem *item) {
             ui->UpdateProgress->setValue(currentFiles);
             if(currentFiles + errorFiles == maxFiles) {
                 if(errorFiles <= 0) {
-                    QSettings settings(QSettings::UserScope);
+                    QSettings settings;
                     settings.setValue("manifestChecksum", manifest->checksum);
                     settings.setValue("oldDir", QDir::currentPath());
                     ui->LaunchButton->setEnabled(true);
@@ -262,7 +262,7 @@ void MainWindow::setManifest(Manifest *manifest) {
     ui->ValidateButton->setEnabled(true);
     ui->UpdateProgress->setValue(0);
 
-    QSettings settings(QSettings::UserScope);
+    QSettings settings;
     QByteArray oldChecksum = settings.value("manifestChecksum").toByteArray();
     QString oldDir = settings.value("oldDIr").toString();
     qInfo() << "old manifest: " + oldChecksum.toHex();
@@ -280,7 +280,7 @@ void MainWindow::setManifest(Manifest *manifest) {
 }
 
 void MainWindow::validateManifest(Manifest *manifest) {
-    QSettings settings(QSettings::UserScope);
+    QSettings settings;
     settings.remove("manifestChecksum");
     settings.remove("oldDir");
     for(QString *item : manifest->deletions)
