@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include "manifest.h"
 #include "optionswindow.h"
+#include "errorwindow.h"
 
 #include <QtConcurrent>
 #include <QMessageBox>
@@ -9,12 +10,11 @@
 #include <QDesktopServices>
 
 MainWindow::MainWindow (
-        QString *switchProcess,
         QWidget *parent )
     : QMainWindow(parent)
     , ui(new Ui::MainWindow) {
 
-    checkUpdate(switchProcess);
+    setup();
 
 }
 
@@ -54,6 +54,7 @@ void MainWindow::setup() {
             QListWidgetItem *item = ui->listWidget->currentItem();
             ServerEntry *entry = item->data(Qt::UserRole).value<ServerEntry*>();
             setManifest(entry->manifest);
+            QDesktopServices::openUrl(entry->site);
         });
 
     connect (
@@ -103,12 +104,18 @@ void MainWindow::downloadItem(ManifestItem *item) {
             qInfo() << item->fname + " validated";
             currentFiles++;
             ui->UpdateProgress->setValue(currentFiles);
-            if(currentFiles + errorFiles == maxFiles) {
-                if(errorFiles <= 0) {
+            if(currentFiles + errorFiles.length() >= maxFiles) {
+                qInfo() << "last file";
+                if(errorFiles.length() <= 0) {
                     QSettings settings;
                     settings.setValue("manifestChecksum", manifest->checksum);
                     settings.setValue("oldDir", QDir::currentPath());
                     ui->LaunchButton->setEnabled(true);
+                } else {
+                    qWarning() << "Opening error window.";
+                    ErrorWindow *w = new ErrorWindow(this);
+                    w->addErrors(errorFiles);
+                    w->show();
                 }
                 ui->ValidateButton->setEnabled(true);
                 ui->listWidget->setEnabled(true);
@@ -118,10 +125,14 @@ void MainWindow::downloadItem(ManifestItem *item) {
 
         if(item->urls.isEmpty()) {
             qWarning() << "failed to download " << item->fname;
-            errorFiles++;
-            if(currentFiles + errorFiles == maxFiles) {
+            errorFiles.append(item->fname + " failed to download");
+            if(currentFiles + errorFiles.length() >= maxFiles) {
                 ui->ValidateButton->setEnabled(true);
                 ui->listWidget->setEnabled(true);
+                qWarning() << "Opening error window.";
+                ErrorWindow *w = new ErrorWindow(this);
+                w->addErrors(errorFiles);
+                w->show();
             }
             return;
         }
@@ -130,10 +141,14 @@ void MainWindow::downloadItem(ManifestItem *item) {
         QSaveFile *file = new QSaveFile(item->fname);
         if(!file->open(QIODevice::WriteOnly)) {
             qWarning() << "failed to write to " << item->fname;
-            errorFiles++;
-            if(currentFiles + errorFiles == maxFiles) {
+            errorFiles.append(item->fname + " failed to create");
+            if(currentFiles + errorFiles.length() >= maxFiles) {
                 ui->ValidateButton->setEnabled(true);
                 ui->listWidget->setEnabled(true);
+                qWarning() << "Opening error window.";
+                ErrorWindow *w = new ErrorWindow(this);
+                w->addErrors(errorFiles);
+                w->show();
             }
             return;
         }
@@ -286,7 +301,7 @@ void MainWindow::validateManifest(Manifest *manifest) {
     for(QString *item : manifest->deletions)
         deleteItem(item);
     currentFiles = 0;
-    errorFiles = 0;
+    errorFiles.clear();
     maxFiles = manifest->items.size();
     ui->ValidateButton->setEnabled(false);
     ui->LaunchButton->setEnabled(false);
@@ -311,219 +326,6 @@ void MainWindow::loadManifests() {
         else
             openManifest(manifest);
     }
-
-}
-
-void MainWindow::checkUpdate(QString *switchProcess) {
-
-    qDebug() << "checking for updates";    
-
-    QUrl url("http://files.thunderspygaming.net/sweet-tea/manifest");
-    QNetworkRequest req(url);
-    req.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
-    QNetworkReply *res = netMan.get(req);
-    connect (
-        res,
-        &QNetworkReply::finished,
-        [=] {
-
-           if(res->error() != QNetworkReply::NoError) {
-               qWarning() << res->request().url() << res->errorString();
-               setup();
-               return;
-           }
-
-           QString lastUpdate = QSettings(QDir(QCoreApplication::applicationDirPath())
-                                 .filePath("sweet-tea.ini"),
-                                 QSettings::IniFormat)
-                   .value("lastUpdate")
-                   .toString();
-           QString version = res->readLine().trimmed();
-           if(lastUpdate == version) {
-               qInfo() << "no update; starting app";
-               setup();
-               return;
-           }
-
-           QMessageBox::StandardButton button = QMessageBox::question (
-                       this,
-                       "New Update",
-                       "A new update of Sweet Tea is available. Update?"
-                       );
-
-          if(button != QMessageBox::Yes) {
-              qInfo() << "canceled update; starting app";
-              setup();
-              return;
-          }
-
-          QProgressBar *bar = new QProgressBar;
-          bar->setFormat("%v/%m");
-          QProgressDialog *progress = new QProgressDialog();
-          progress->setBar(bar);
-          progress->setAutoReset(true);
-          progress->setAutoClose(true);
-          progress->show();
-
-          QUrl baseUrl(res->readLine().trimmed());
-          QList<QByteArray> lines = res->readAll().trimmed().split('\n');
-          currentFiles = 0;
-          maxFiles = lines.size();
-          progress->setMaximum(maxFiles);
-          for(QString line : lines) {
-              QStringList entry = line.split(' ');
-              download(baseUrl, entry.at(1), entry.at(0), version, switchProcess, progress);
-          }
-
-           res->deleteLater();
-
-    });
-
-}
-
-bool MainWindow::validate(QString fname, QString checksum) {
-    QFile file(QDir(QCoreApplication::applicationDirPath()).filePath(fname));
-    QCryptographicHash hash(QCryptographicHash::Md5);
-    return file.exists()
-            && file.open(QFile::ReadOnly)
-            && hash.addData(&file)
-            && hash.result() == QByteArray::fromHex(checksum.toLatin1());
-}
-
-void MainWindow::download(QUrl baseUrl, QString fname, QString checksum, QString version, QString *switchProcess, QProgressDialog *progress) {
-
-    QFutureWatcher<bool> *watcher = new QFutureWatcher<bool>(this);
-    QFuture<bool> future = QtConcurrent::run([this, fname, checksum] {
-         return validate(fname, checksum);
-    });
-    connect (
-         watcher,
-         &QFutureWatcher<bool>::finished,
-         [=] {
-             if(future.result()) {
-                 currentFiles++;
-                 qInfo() << fname << " validated";
-                 qInfo() << currentFiles << "/" << maxFiles;
-                 progress->setValue(currentFiles);
-                 if(currentFiles == maxFiles) {
-                     progress->deleteLater();
-                     QSettings settings(QDir(QCoreApplication::applicationDirPath())
-                             .filePath("sweet-tea.ini"),
-                             QSettings::IniFormat);
-                     settings.setValue("lastUpdate", version);
-                     qInfo() << "validated last file";
-                     if(switchProcess == nullptr) {
-                         qInfo() << "starting main app";
-                        setup();
-                     }
-                     else {
-                         qInfo() << "switching processes " << *switchProcess;
-                         if(QProcess::startDetached(*switchProcess))
-                            QApplication::quit();
-                         else
-                             qCritical() << "can't swap process: " << *switchProcess;
-                     }
-                 }
-                 watcher->deleteLater();
-                 return;
-             }
-
-             qInfo() << fname << " downloading";
-
-             QFileInfo(fname).dir().mkpath(".");
-             QSaveFile *file = new QSaveFile(QDir(QCoreApplication::applicationDirPath()).filePath(fname));
-
-             if(QFileInfo(fname).fileName() == QFileInfo(QCoreApplication::applicationFilePath()).fileName()) {
-                 selfUpdate();
-             }
-
-             if(!file->open(QIODevice::WriteOnly)) {
-                 qWarning() << "failed to write create " << fname;
-                 return;
-             }
-
-             QNetworkRequest req(QUrl(baseUrl.toString() + fname));
-             req.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
-             QNetworkReply *res = netMan.get(req);
-             connect (
-                 res,
-                 &QNetworkReply::readyRead,
-                 [res, file] {
-                    if(file->write(res->read(res->bytesAvailable())) < 0)
-                        qWarning() << "failed to write to " << file->fileName();
-                 });
-             connect (
-                 res,
-                 &QNetworkReply::finished,
-                 [=] {
-
-                    if(res->error() != QNetworkReply::NoError)
-                        qWarning() << res->request().url() << res->errorString();
-
-                    res->deleteLater();
-                    file->commit();
-
-                    QFutureWatcher<bool> *otherWatcher = new QFutureWatcher<bool>(this);
-                    QFuture<bool> future = QtConcurrent::run([this, fname, checksum] {
-                             return validate(fname, checksum);
-                        });
-                    connect (
-                        otherWatcher,
-                        &QFutureWatcher<bool>::finished,
-                        [=] {
-                            if(future.result()) {
-                                currentFiles++;
-                                qInfo() << fname << " validated";
-                                qInfo() << currentFiles << "/" << maxFiles;
-                                progress->setValue(currentFiles);
-                                if(currentFiles == maxFiles) {
-                                    progress->deleteLater();
-                                    QSettings settings(QDir(QCoreApplication::applicationDirPath())
-                                                       .filePath("sweet-tea.ini"),
-                                                       QSettings::IniFormat);
-                                    settings.setValue("lastUpdate", version);
-                                    qInfo() << "validated last file";
-                                    if(switchProcess == nullptr) {
-                                        qInfo() << "starting main app";
-                                       setup();
-                                    }
-                                    else {
-                                        qInfo() << "switching processes " << *switchProcess;
-                                        if(QProcess::startDetached(*switchProcess))
-                                           QApplication::quit();
-                                        else
-                                            qCritical() << "can't swap process: " << *switchProcess;
-                                    }
-                                }
-                                else {
-                                    progress->setLabelText("error: " + fname);
-                                }
-                            }
-                            otherWatcher->deleteLater();
-                            watcher->deleteLater();
-                        });
-                    otherWatcher->setFuture(future);
-
-                 });
-
-         });
-    watcher->setFuture(future);
-
-}
-
-void MainWindow::selfUpdate() {
-
-    QFile self(QCoreApplication::applicationFilePath());
-    QFile(QCoreApplication::applicationFilePath() + ".old").remove();
-    if (
-            self.open(QIODevice::ReadOnly)
-            && self.copy(QCoreApplication::applicationFilePath() + ".old")
-            && QProcess::startDetached(QCoreApplication::applicationFilePath() + ".old", QStringList() << "Sweet-Tea.exe") ) {
-        qInfo() << "switching process: " << QCoreApplication::applicationFilePath() + ".old";
-        QApplication::quit();
-    }
-    else
-        qWarning() << "can't copy " << QCoreApplication::applicationFilePath();
 
 }
 

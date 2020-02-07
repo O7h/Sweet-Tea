@@ -27,10 +27,7 @@ int main(int argc, char *argv[])
             qWarning() << "unable to create: " + datadir;
     }
 
-    QString *switchProcess = a.arguments().size() > 1
-            ? new QString(a.arguments().at(1))
-            : nullptr;
-    MainWindow w(switchProcess);
+    MainWindow w;
     w.show();
 
     return a.exec();

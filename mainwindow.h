@@ -17,7 +17,7 @@ class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
-    MainWindow(QString *switchProcess = nullptr, QWidget *parent = nullptr);
+    MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
 private:
@@ -25,15 +25,11 @@ private:
     Ui::MainWindow *ui;
     Manifest* manifest;
     long currentFiles;
-    long errorFiles;
+    QList<QString> errorFiles;
     long maxFiles;
 
-    bool validate(QString fname, QString checksum);
     void setup();
     void addServerEntry(ServerEntry* server);
-    void download(QUrl baseUrl, QString fname, QString checksum, QString version, QString *switchProcess, QProgressDialog *progress);
-    void checkUpdate(QString *switchProcess);
-    void selfUpdate();
     void setManifest(Manifest* manifest);
     void validateManifest(Manifest* manifest);
     void downloadManifest(QUrl url);
