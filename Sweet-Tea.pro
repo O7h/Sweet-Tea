@@ -10,6 +10,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     errorwindow.cpp \
+    launchprofileitemdelegate.cpp \
     main.cpp \
     mainwindow.cpp \
     manifest.cpp \
@@ -19,6 +20,7 @@ SOURCES += \
 
 HEADERS += \
     errorwindow.h \
+    launchprofileitemdelegate.h \
     mainwindow.h \
     manifest.h \
     manifestitem.h \

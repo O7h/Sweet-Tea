@@ -2,7 +2,7 @@
 
 ServerEntry::ServerEntry (
         QString name,
-        QUrl site,
+        QUrl motd,
         QUrl icon,
         QString client,
         QString args,
@@ -10,7 +10,7 @@ ServerEntry::ServerEntry (
         QObject *parent )
     : QObject(parent),
       name(name),
-      site(site),
+      motd(motd),
       icon(icon),
       client(client),
       args(args),

@@ -3,6 +3,7 @@
 #include "manifest.h"
 #include "optionswindow.h"
 #include "errorwindow.h"
+#include "launchprofileitemdelegate.h"
 
 #include <QtConcurrent>
 #include <QMessageBox>
@@ -22,6 +23,7 @@ void MainWindow::setup() {
 
     ui->setupUi(this);
     ui->listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+    ui->listWidget->setItemDelegate(new LaunchProfileItemDelegate);
 
     loadManifests();
 
@@ -52,9 +54,8 @@ void MainWindow::setup() {
         &QListWidget::itemClicked,
         [this] {
             QListWidgetItem *item = ui->listWidget->currentItem();
-            ServerEntry *entry = item->data(Qt::UserRole).value<ServerEntry*>();
+            ServerEntry *entry = item->data(Qt::UserRole + 1).value<ServerEntry*>();
             setManifest(entry->manifest);
-            QDesktopServices::openUrl(entry->site);
         });
 
     connect (
@@ -63,7 +64,7 @@ void MainWindow::setup() {
         [this] {
             QProcess *proc = new QProcess(this);
             QListWidgetItem *item = ui->listWidget->currentItem();
-            ServerEntry *server = item->data(Qt::UserRole).value<ServerEntry*>();
+            ServerEntry *server = item->data(Qt::UserRole + 1).value<ServerEntry*>();
             proc->startDetached(server->client, server->args.split(" "));
         });
 
@@ -187,7 +188,7 @@ void MainWindow::downloadItem(ManifestItem *item) {
 void MainWindow::addServerEntry(ServerEntry *server) {
 
     QListWidgetItem *item = new QListWidgetItem(server->name, ui->listWidget);
-    item->setData(Qt::UserRole, QVariant::fromValue(server));
+    item->setData(Qt::UserRole + 1, QVariant::fromValue(server));
 
     if(!server->icon.isEmpty()) {
         QNetworkRequest req(server->icon);
@@ -208,6 +209,30 @@ void MainWindow::addServerEntry(ServerEntry *server) {
                    qWarning() << "unable to read icon: " << server->icon;
                else
                    item->setIcon(QIcon(pixels));
+
+               res->deleteLater();
+
+            });
+    }
+
+    if(!server->motd.isEmpty()) {
+        QNetworkRequest req(server->motd);
+        req.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+        QNetworkReply *res = netMan.get(req);
+        item->setData(Qt::UserRole, "Retrieving MoTD");
+        connect (
+            res,
+            &QNetworkReply::finished,
+            [=] {
+
+               if(res->error() != QNetworkReply::NoError) {
+                   qWarning() << "motd: " << res->errorString();
+                   item->setData(Qt::UserRole, "Failed to retrieve MoTD");
+                   return;
+               }
+
+               QString motd(res->read(140));
+               item->setData(Qt::UserRole, motd);
 
                res->deleteLater();
 

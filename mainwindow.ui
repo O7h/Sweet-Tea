@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>340</width>
+    <width>800</width>
     <height>400</height>
    </rect>
   </property>
@@ -23,6 +23,10 @@
   </property>
   <property name="windowTitle">
    <string>Sweet Tea</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>icon.ico</normaloff>icon.ico</iconset>
   </property>
   <widget class="QWidget" name="MainWidget">
    <property name="enabled">

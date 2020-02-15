@@ -13,7 +13,7 @@ class ServerEntry : public QObject
 public:
     explicit ServerEntry (
             QString name,
-            QUrl site,
+            QUrl motd,
             QUrl icon,
             QString client,
             QString args,
@@ -21,7 +21,7 @@ public:
             QObject *parent = nullptr );
 
     QString name;
-    QUrl site;
+    QUrl motd;
     QUrl icon;
     QString client;
     QString args;
