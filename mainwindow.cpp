@@ -111,6 +111,8 @@ void MainWindow::downloadItem(ManifestItem *item) {
                     QSettings settings;
                     settings.setValue("manifestChecksum", manifest->checksum);
                     settings.setValue("oldDir", QDir::currentPath());
+                    qInfo() << QDir::currentPath();
+                    qInfo() << settings.value("oldDir").toString();
                     ui->LaunchButton->setEnabled(true);
                 } else {
                     qWarning() << "Opening error window.";
@@ -304,7 +306,7 @@ void MainWindow::setManifest(Manifest *manifest) {
 
     QSettings settings;
     QByteArray oldChecksum = settings.value("manifestChecksum").toByteArray();
-    QString oldDir = settings.value("oldDIr").toString();
+    QString oldDir = settings.value("oldDir").toString();
     qInfo() << "old manifest: " + oldChecksum.toHex();
     qInfo() << "new manifest: " + manifest->checksum.toHex();
     qInfo() << "old dir: " + oldDir;
@@ -339,9 +341,7 @@ void MainWindow::validateManifest(Manifest *manifest) {
 void MainWindow::loadManifests() {
 
     ui->listWidget->clear();
-    QSettings settings(QDir(QCoreApplication::applicationDirPath())
-                       .filePath("sweet-tea.ini"),
-                       QSettings::IniFormat);
+    QSettings settings;
     QStringList manifests = settings.value("manifests").toStringList();
 
     for(QString manifest : manifests) {

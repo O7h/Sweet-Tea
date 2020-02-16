@@ -13,9 +13,7 @@ OptionsWindow::OptionsWindow(QWidget *parent) :
 
     ui->setupUi(this);
 
-    QSettings *settings = new QSettings(QDir(QCoreApplication::applicationDirPath())
-                       .filePath("sweet-tea.ini"),
-                       QSettings::IniFormat);
+    QSettings *settings = new QSettings();
     ui->ManifestList->addItems(settings->value("manifests").toStringList());
     ui->DownloadPathLine->setText(
                 settings->value("datadir",

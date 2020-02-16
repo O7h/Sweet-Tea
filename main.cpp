@@ -12,9 +12,7 @@ int main(int argc, char *argv[])
     a.setApplicationName("Sweet Tea");
     a.setOrganizationName("Thunderspy Gaming");
 
-    QSettings settings(QDir(QCoreApplication::applicationDirPath())
-                       .filePath("sweet-tea.ini"),
-                       QSettings::IniFormat);
+    QSettings settings;
     QString datadir = settings.value (
                 "datadir",
                 QStandardPaths::writableLocation(QStandardPaths::DataLocation)
