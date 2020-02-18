@@ -14,7 +14,7 @@ OptionsWindow::OptionsWindow(QWidget *parent) :
     ui->setupUi(this);
 
     QSettings *settings = new QSettings();
-    ui->ManifestList->addItems(settings->value("manifests").toStringList());
+    ui->ManifestList->addItems(settings->value("manifests").toString().split(" "));
     ui->DownloadPathLine->setText(
                 settings->value("datadir",
                                QStandardPaths::writableLocation(
@@ -65,7 +65,7 @@ OptionsWindow::OptionsWindow(QWidget *parent) :
             QStringList manifests;
             for(int i = 0; i < ui->ManifestList->count(); i++)
                 manifests.append(ui->ManifestList->item(i)->text());
-            settings->setValue("manifests", manifests);
+            settings->setValue("manifests", manifests.join(" "));
             QString datadir = ui->DownloadPathLine->text().isEmpty()
                     ? QDir::currentPath()
                     : ui->DownloadPathLine->text();

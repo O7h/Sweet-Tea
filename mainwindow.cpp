@@ -342,7 +342,7 @@ void MainWindow::loadManifests() {
 
     ui->listWidget->clear();
     QSettings settings;
-    QStringList manifests = settings.value("manifests").toStringList();
+    QStringList manifests = settings.value("manifests").toString().split(" ");
 
     for(QString manifest : manifests) {
         QUrl url = QUrl::fromUserInput(manifest);
