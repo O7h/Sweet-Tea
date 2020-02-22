@@ -18,11 +18,11 @@ void LaunchProfileItemDelegate::paint(QPainter *painter, const QStyleOptionViewI
     if(option.state & QStyle::State_Selected)
         painter->fillRect(rect, option.palette.highlight());
 
-    rect = option.rect.adjusted(5, 5, 0, 0);
+    rect = option.rect.adjusted(0, 0, 0, 0);
     if(!icon.isNull())
         icon.paint(painter, rect, Qt::AlignVCenter|Qt::AlignLeft);
 
-    rect = option.rect.adjusted(55, 0, 0, 0);
+    rect = option.rect.adjusted(option.fontMetrics.height() * 4, 0, 0, 0);
     painter->setFont(QFont(option.font.family(), 11, QFont::Bold));
     painter->setBrush(QColor(0, 0, 0));
     painter->drawText (
@@ -37,7 +37,7 @@ void LaunchProfileItemDelegate::paint(QPainter *painter, const QStyleOptionViewI
         name,
         &rect );
 
-    rect = option.rect.adjusted(55, 0, 0, 0);
+    rect = option.rect.adjusted(option.fontMetrics.height() * 4, 0, 0, 0);
     painter->setFont(QFont(option.font.family(), 8, QFont::Normal));
     painter->setBrush(QColor(0, 0, 0));
     if(!motd.isNull())
