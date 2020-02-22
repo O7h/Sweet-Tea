@@ -12,9 +12,11 @@ int main(int argc, char *argv[])
     a.setApplicationName("Sweet Tea");
     a.setOrganizationName("Thunderspy Gaming");
 
-    QSettings settings(QDir(QCoreApplication::applicationDirPath())
-                       .filePath("sweet-tea.ini"),
-                       QSettings::IniFormat);
+    /*
+     * Attempt to change the working directory
+     * to the one in the one in the configurations.
+     */
+    QSettings settings;
     QString datadir = settings.value (
                 "datadir",
                 QStandardPaths::writableLocation(QStandardPaths::DataLocation)
@@ -27,10 +29,8 @@ int main(int argc, char *argv[])
             qWarning() << "unable to create: " + datadir;
     }
 
-    QString *switchProcess = a.arguments().size() > 1
-            ? new QString(a.arguments().at(1))
-            : nullptr;
-    MainWindow w(switchProcess);
+    // Show the main window.
+    MainWindow w;
     w.show();
 
     return a.exec();

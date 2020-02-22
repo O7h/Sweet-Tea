@@ -62,8 +62,8 @@ Manifest::Manifest(QDomDocument &doc, QByteArray checksum, QObject *parent)
                 .namedItem("exec")
                 .nodeValue()
                 .trimmed();
-        QUrl site(node.attributes()
-                  .namedItem("website")
+        QUrl motd(node.attributes()
+                  .namedItem("motd")
                   .nodeValue()
                   .trimmed());
         QString args = node.attributes()
@@ -71,7 +71,7 @@ Manifest::Manifest(QDomDocument &doc, QByteArray checksum, QObject *parent)
                 .nodeValue()
                 .trimmed();
         if(!QDir(client).isAbsolute() && !client.contains(".."))
-            servers.append(new ServerEntry(name, site, icon, client, args, this, this));
+            servers.append(new ServerEntry(name, motd, icon, client, args, this, this));
         else
             qWarning() << "insecure path not allowed for client: " << client;
     }
