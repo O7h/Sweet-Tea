@@ -251,6 +251,7 @@ void MainWindow::addServerEntry(ServerEntry *server) {
     // Download the message of the day (MoTD) if one is available.
     if(!server->motd.isEmpty()) {
         QNetworkRequest req(server->motd);
+        req.setHeader(QNetworkRequest::UserAgentHeader, "Sweet Tea / 1.2.0");
         req.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
         QNetworkReply *res = netMan.get(req);
         item->setData(Qt::UserRole, "Retrieving MoTD");
