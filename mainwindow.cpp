@@ -10,6 +10,7 @@
 #include <QProgressDialog>
 #include <QDesktopServices>
 
+// FIXME: Don't put so much in the main window.
 MainWindow::MainWindow (
         QWidget *parent )
     : QMainWindow(parent)
@@ -27,6 +28,9 @@ void MainWindow::setup() {
 
     loadManifests();
 
+    /*
+     * Configure the screenshot button to open the screenshot folder.
+     */
     connect (
         ui->ScreenshotButton,
         &QPushButton::released,
@@ -36,6 +40,9 @@ void MainWindow::setup() {
             QDesktopServices::openUrl(QUrl::fromLocalFile(path));
         });
 
+    /*
+     * Configure the options button to open the options menu.
+     */
     connect (
         ui->OptionsButton,
         &QPushButton::released,
@@ -49,6 +56,10 @@ void MainWindow::setup() {
             });
         });
 
+    /*
+     * Configure the launch profile list to set the
+     * current manifest to the selected list item.
+     */
     connect (
         ui->listWidget,
         &QListWidget::itemClicked,
@@ -58,6 +69,9 @@ void MainWindow::setup() {
             setManifest(entry->manifest);
         });
 
+    /*
+     * Configure the launch button to run with the given launch profile.
+     */
     connect (
         ui->LaunchButton,
         &QPushButton::released,
@@ -68,6 +82,9 @@ void MainWindow::setup() {
             proc->startDetached(server->client, server->args.split(" "));
         });
 
+    /*
+     * Configure the validate button to validate the selected manifest.
+     */
     connect (
         ui->ValidateButton,
         &QPushButton::released,
@@ -77,6 +94,9 @@ void MainWindow::setup() {
 
 }
 
+/*
+ * Ask the user for permission before deleting a file.
+ */
 void MainWindow::deleteItem(QString *item) {
 
     QFile file(*item);
@@ -92,6 +112,10 @@ void MainWindow::deleteItem(QString *item) {
 
 }
 
+/*
+ * Download and/or validate a file in the given manifest.
+ * FIXME: A LOT of code dupe.
+ */
 void MainWindow::downloadItem(ManifestItem *item) {
 
     QFutureWatcher<bool> *watcher = new QFutureWatcher<bool>(this);
@@ -187,11 +211,18 @@ void MainWindow::downloadItem(ManifestItem *item) {
 
 }
 
+/*
+ * Add a server entry (launch profile) to the UI list.
+ */
 void MainWindow::addServerEntry(ServerEntry *server) {
 
+    /*
+     * Create a data model object for the list widget from the launch profile.
+     */
     QListWidgetItem *item = new QListWidgetItem(server->name, ui->listWidget);
     item->setData(Qt::UserRole + 1, QVariant::fromValue(server));
 
+    // Download the launch profile icon if it's there is one available.
     if(!server->icon.isEmpty()) {
         QNetworkRequest req(server->icon);
         req.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
@@ -217,6 +248,7 @@ void MainWindow::addServerEntry(ServerEntry *server) {
             });
     }
 
+    // Download the message of the day (MoTD) if one is available.
     if(!server->motd.isEmpty()) {
         QNetworkRequest req(server->motd);
         req.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
@@ -243,31 +275,65 @@ void MainWindow::addServerEntry(ServerEntry *server) {
 
 }
 
+/*
+ * Read a manifest file from the local file system.
+ */
 void MainWindow::openManifest(QString fname) {
 
+    /*
+     * Disable the validate button so it's not
+     * pressed while a manifest is being read
+     * still.
+     */
     ui->ValidateButton->setEnabled(false);
     ui->UpdateProgress->setValue(false);
 
+    // Parse the XML of the manifest.
     QDomDocument doc;
     QFile file(fname);
+
     if(file.open(QIODevice::ReadOnly) && doc.setContent(&file)) {
+
+        // Hash the manifest to easily compare to other manifests.
         QCryptographicHash md5(QCryptographicHash::Md5);
         md5.addData(doc.toByteArray());
+
+        // Create a manifest object from the XML file.
+        // Add its server entries (launch profiles) to the list.
         Manifest *manifest = new Manifest(doc, md5.result());
         for(ServerEntry *server : manifest->servers)
             addServerEntry(server);
+
     }
+
     else
+        // Log a critical error if the manifest can't be read.
+        // FIXME: Add to error list.
+        // FIXME: Make error critical.
         qWarning() << "unable to read manifest: " + fname;
+
     file.close();
 
 }
 
+/*
+ * Download a manifest.
+ */
 void MainWindow::downloadManifest(QUrl url) {
 
+    /*
+     * Disable the validate button so it's not
+     * pressed while a manifest is being downloaded
+     * still.
+     */
     ui->ValidateButton->setEnabled(false);
     ui->UpdateProgress->setValue(false);
 
+    /*
+     * Send an HTTP request to download the manifest,
+     * and add its launch profiles (server entries) to the
+     * list for display on success response.
+     */
     QNetworkRequest req(url);
     req.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
     QNetworkReply *res = netMan.get(req);
@@ -276,34 +342,61 @@ void MainWindow::downloadManifest(QUrl url) {
         &QNetworkReply::finished,
         [=] {
 
+           // Log a critical error if the manifest can't be downloaded.
+           // FIXME: Add to error list.
            if(res->error() != QNetworkReply::NoError)
                qCritical() << "manifest: " << res->errorString();
 
+           // Parse the XML of the manifest.
            QByteArray content = res->readAll();
            QDomDocument doc = QDomDocument();
            doc.setContent(content);
 
+           // Hash the manifest to easily compare to other manifests.
            QCryptographicHash md5(QCryptographicHash::Md5);
            md5.addData(content);
 
+           // Create a manifest object from the XML file.
+           // Add its server entries (launch profiles) to the list.
            Manifest *manifest = new Manifest(doc, md5.result());
            for(ServerEntry *server : manifest->servers)
                addServerEntry(server);
 
+           // Delete the response object to avoid memory leaks.
            res->deleteLater();
 
         });
 
 }
 
+/*
+ * Set the currently selected manifest.
+ */
 void MainWindow::setManifest(Manifest *manifest) {
 
+    /*
+     * Reference the selected manifest so it can
+     * be used when the validate button is pressed.
+     */
     this->manifest = manifest;
 
+    /*
+     * Since a manifest is needed for validation,
+     * enable the validation button once a manifest
+     * is selected. Disable the launch button until
+     * that manifest has been validated, and set
+     * validation progress to 0.
+     */
     ui->LaunchButton->setEnabled(false);
     ui->ValidateButton->setEnabled(true);
     ui->UpdateProgress->setValue(0);
 
+    /*
+     * The checksum from the last valid manifest, and
+     * the last directory used to download files can
+     * be compared to the current manifest and directory
+     * to determine if validation is necessary.
+     */
     QSettings settings;
     QByteArray oldChecksum = settings.value("manifestChecksum").toByteArray();
     QString oldDir = settings.value("oldDir").toString();
@@ -312,6 +405,9 @@ void MainWindow::setManifest(Manifest *manifest) {
     qInfo() << "old dir: " + oldDir;
     qInfo() << "new dir: " + QDir::currentPath();
 
+    /*
+     * Enable launching if this manifest is the last valid one.
+     */
     if(oldChecksum == manifest->checksum && oldDir == QDir::currentPath()) {
         currentFiles = manifest->items.size();
         ui->UpdateProgress->setValue(currentFiles);
@@ -321,23 +417,56 @@ void MainWindow::setManifest(Manifest *manifest) {
 
 }
 
+/*
+ * Validate a manifest by validating each file in
+ * the manifest.
+ */
 void MainWindow::validateManifest(Manifest *manifest) {
+
+    /*
+     * Clear the last valid manifest and download
+     * directory, so that validation is not skipped
+     * again until another manifest is validated.
+     */
     QSettings settings;
     settings.remove("manifestChecksum");
     settings.remove("oldDir");
+
+    /*
+     * Delete any files that are designated for
+     * deletion in the manifest.
+     */
     for(QString *item : manifest->deletions)
         deleteItem(item);
+
+    /*
+     * FIXME: The current file count was used for
+     * other things, but not it's only here for the
+     * progress bar. This can be removed later.
+     */
     currentFiles = 0;
     errorFiles.clear();
     maxFiles = manifest->items.size();
+
+    /*
+     * Disable the UI elements, so they aren't pressed
+     * during validation.
+     */
     ui->ValidateButton->setEnabled(false);
     ui->LaunchButton->setEnabled(false);
     ui->listWidget->setEnabled(false);
     ui->UpdateProgress->setMaximum(maxFiles);
+
+    // Download and/or validate each file in the manifest.
     for(ManifestItem *item : manifest->items)
         downloadItem(item);
+
 }
 
+/*
+ * Fetch the list of manifests, and either download
+ * or read from the local file system.
+ */
 void MainWindow::loadManifests() {
 
     ui->listWidget->clear();
@@ -346,10 +475,15 @@ void MainWindow::loadManifests() {
 
     for(QString manifest : manifests) {
         QUrl url = QUrl::fromUserInput(manifest);
+
+        // Download the manifest if it's not a local file.
         if(!url.isLocalFile())
             downloadManifest(url);
+
+        // Read the manifest from the local file system.
         else
             openManifest(manifest);
+
     }
 
 }
