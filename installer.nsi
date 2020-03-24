@@ -13,6 +13,6 @@ File libssl-1_1-x64.dll
 createDirectory "$SMPROGRAMS\Thunderspy Gaming"
 createShortCut "$SMPROGRAMS\Thunderspy Gaming\Sweet Tea.lnk" "$INSTDIR\Sweet-Tea.exe"
 
-WriteRegStr HKCU "Software\Thunderspy Gaming\Sweet Tea" "manifests" "https://www.thunderspygaming.net/styles/freedom/manifest.xml https://join.cityofheroesrebirth.com/Manifests/Rebirth.xml http://slanter.sytes.net/ultramanifest.xml"
+WriteRegStr HKCU "Software\Thunderspy Gaming\Sweet Tea" "manifests" "https://www.thunderspygaming.net/styles/freedom/manifest.xml http://sanctuary.host/manifest.xml https://join.cityofheroesrebirth.com/Manifests/Rebirth.xml http://slanter.sytes.net/ultramanifest.xml http://qa.thunderspygaming.net/manifest.xml"
 
 SectionEnd
