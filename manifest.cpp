@@ -35,7 +35,10 @@ Manifest::Manifest(QDomDocument &doc, QByteArray checksum, QObject *parent)
             urls.append(new QUrl(child.toElement().text().trimmed()));
         }
         if(!QDir(name).isAbsolute() && !name.contains(".."))
-            items.append(new ManifestItem(name, md5, size, urls, this));
+            if(size == 0)
+                deletions.append(new QString(name));
+            else
+                items.append(new ManifestItem(name, md5, size, urls, this));
         else
             qWarning() << "insecure path not allowed for file: " << name;
     }
